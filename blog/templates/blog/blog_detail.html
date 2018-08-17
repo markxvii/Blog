@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{# 标题 #}
+{% block title %}
+    {{ blog.title }}
+{% endblock %}
+{# 导航条选中样式 #}
+{% block nav_blog_active %}
+    active
+{% endblock %}
+{# css文件 #}
+{% load staticfiles %}
+{% block header_extends %}
+    <link rel="stylesheet" href="{% static 'blog.css' %}">
+{% endblock %}
+{# 内容 #}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-10 col-md-offset-1">
+                <h3>{{ blog.title }}</h3>
+                <ul class="blog-info-description">
+                    <li>作者：{{ blog.author }}</li>
+                    <li>分类：
+                        <a href="{% url 'blogs_with_type' blog.blog_type.pk %} ">
+                            {{ blog.blog_type }}
+                        </a>
+                    </li>
+                    <li>发表日期：{{ blog.create_time|date:'Y-m-d H:i:s' }}</li>
+                    <li>最后修改：{{ blog.last_update_time|date:'Y-m-d H:i:s' }}</li>
+                </ul>
+                <div class="blog-content">{{ blog.content }}</div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

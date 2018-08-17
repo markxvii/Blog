@@ -1,0 +1,4 @@
+certifi==2018.8.13
+Django==2.1
+pytz==2018.5
+wincertstore==0.2

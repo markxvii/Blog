@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{# 标题 #}
+{% block title %}
+    我的网站|首页
+{% endblock %}
+{# 引用的css #}
+{% block header_extends %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+{% endblock %}
+{# 导航条选中样式 #}
+{% block nav_home_active %}
+    active
+{% endblock %}
+{# 内容 #}
+{% block content %}
+    <h3 class="home-content">Marc's Blog</h3>
+{% endblock %}

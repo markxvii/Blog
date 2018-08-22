@@ -1,7 +1,9 @@
 from django.shortcuts import render_to_response, get_object_or_404
 from django.core.paginator import Paginator
 from .models import Blog, BlogType
+from django.db.models import Count
 from django.conf import settings
+from datetime import datetime
 
 
 # Create your views here.
@@ -24,13 +26,22 @@ def blog_list_commonData(request, blogs_all_list):
     if page_range[-1] != paginator.num_pages:
         page_range.append(paginator.num_pages)
 
+    # 获取日期归档对应的博客数量
+    blog_dates = Blog.objects.dates('create_time', 'month', order='DESC')
+    blog_dates_dict = {}
+    for blog_date in blog_dates:
+        blog_count = Blog.objects.filter(create_time__year=blog_date.year,
+                                         create_time__month=blog_date.month).count()
+        blog_dates_dict[blog_date] = blog_count
+
     context = {}
     context['blogs'] = page_of_blogs.object_list
     context['page_of_blogs'] = page_of_blogs
     context['page_range'] = page_range
-    context['blog_types'] = BlogType.objects.all()
-    context['blog_dates'] = Blog.objects.dates('create_time', 'month', order='DESC')
+    context['blog_types'] = BlogType.objects.annotate(blog_count=Count('blog'))
+    context['blog_dates'] = blog_dates_dict
     return context
+
 
 def blog_list(request):
     blogs_all_list = Blog.objects.all()
@@ -54,9 +65,15 @@ def blogs_with_date(request, year, month):
 
 
 def blog_detail(request, blog_pk):
-    context = {}
     blog = get_object_or_404(Blog, pk=blog_pk)
+    # 如果获取不了浏览器存储的cookie则次数+1
+    if not request.COOKIES.get('blog_%s_read' % blog_pk):
+        blog.read_num += 1
+        blog.save()
+    context = {}
     context['previous_blog'] = Blog.objects.filter(create_time__lt=blog.create_time).first()
     context['next_blog'] = Blog.objects.filter(create_time__gt=blog.create_time).last()
     context['blog'] = blog
-    return render_to_response('blog/blog_detail.html', context)
+    response = render_to_response('blog/blog_detail.html', context)  # 响应
+    response.set_cookie('blog_%s_read' % blog_pk, 'true')  # 给浏览器发送已读cookie
+    return response

@@ -27,7 +27,7 @@
                     </li>
                     <li>发表日期：{{ blog.create_time|date:'Y-m-d H:i:s' }}</li>
                     <li>最后修改：{{ blog.last_update_time|date:'Y-m-d H:i:s' }}</li>
-                    <li>阅读({{ blog.read_num }})</li>
+                    <li>阅读({{ blog.get_read_num }})</li>
                 </ul>
                 <div class="blog-content">{{ blog.content|safe }}</div>
                 <div class="blog-more">

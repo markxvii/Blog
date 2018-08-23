@@ -3,7 +3,7 @@ from django.core.paginator import Paginator
 from .models import Blog, BlogType
 from django.db.models import Count
 from django.conf import settings
-from datetime import datetime
+from read_statistics.utils import read_statistics_once
 
 
 # Create your views here.
@@ -66,14 +66,12 @@ def blogs_with_date(request, year, month):
 
 def blog_detail(request, blog_pk):
     blog = get_object_or_404(Blog, pk=blog_pk)
-    # 如果获取不了浏览器存储的cookie则次数+1
-    if not request.COOKIES.get('blog_%s_read' % blog_pk):
-        blog.read_num += 1
-        blog.save()
+    read_cookie_key = read_statistics_once(request, blog)
+
     context = {}
     context['previous_blog'] = Blog.objects.filter(create_time__lt=blog.create_time).first()
     context['next_blog'] = Blog.objects.filter(create_time__gt=blog.create_time).last()
     context['blog'] = blog
     response = render_to_response('blog/blog_detail.html', context)  # 响应
-    response.set_cookie('blog_%s_read' % blog_pk, 'true')  # 给浏览器发送已读cookie
+    response.set_cookie(read_cookie_key, 'true')  # 给浏览器发送已读cookie
     return response

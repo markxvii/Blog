@@ -1,5 +1,8 @@
+import datetime
 from django.contrib.contenttypes.models import ContentType
-from .models import ReadNum
+from django.utils import timezone
+from .models import ReadNum, ReadDetail
+from django.db.models import Sum
 
 
 # 如果获取不了浏览器存储的cookie则次数+1
@@ -8,13 +11,41 @@ def read_statistics_once(request, obj):
     key = '%s_%s_read' % (ct.model, obj.pk)
 
     if not request.COOKIES.get(key):
-        if ReadNum.objects.filter(content_type=ct, object_id=obj.pk).count():
-            # 存在记录则取出数据
-            readnum = ReadNum.objects.get(content_type=ct, object_id=obj.pk)
-        else:
-            # 不存在记录则新建一条对应博客的数据
-            readnum = ReadNum(content_type=ct, object_id=obj.pk)
+        # 总阅读数 + 1
+        readnum, created = ReadNum.objects.get_or_create(content_type=ct, object_id=obj.pk)
         # 计数加一
         readnum.read_num += 1
         readnum.save()
+
+        # 当天阅读数 + 1
+        date = timezone.now().date()
+        readDetail, created = ReadDetail.objects.get_or_create(content_type=ct, object_id=obj.pk, date=date)
+        readDetail.read_num += 1
+        readDetail.save()
     return key
+
+
+def seven_days_data(content_type):
+    today = timezone.now().date()
+    dates = []
+    read_nums = []
+    for i in range(6, -1, -1):
+        date = today - datetime.timedelta(days=i)
+        dates.append(date.strftime('%m/%d'))
+        read_details = ReadDetail.objects.filter(content_type=content_type, date=date)
+        result = read_details.aggregate(read_num_sum=Sum('read_num'))
+        read_nums.append(result['read_num_sum'] or 0)
+    return dates, read_nums
+
+
+def today_hot_data(content_type):
+    today = timezone.now().date()
+    read_details = ReadDetail.objects.filter(content_type=content_type, date=today).order_by('-read_num')
+    return read_details[:3]
+
+
+def yesterday_hot_data(content_type):
+    today = timezone.now().date()
+    yesterday = today - datetime.timedelta(days=1)
+    read_details = ReadDetail.objects.filter(content_type=content_type, date=yesterday).order_by('-read_num')
+    return read_details[:3]

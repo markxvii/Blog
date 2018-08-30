@@ -1,11 +1,13 @@
 import datetime
-from django.shortcuts import render_to_response
+from django.shortcuts import render, redirect
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.db.models import Sum
 from django.core.cache import cache
 from read_statistics.utils import seven_days_data, today_hot_data, yesterday_hot_data
 from blog.models import Blog
+from django.contrib import auth
+from django.urls import reverse
 
 
 def week_hot_blog():
@@ -37,4 +39,16 @@ def home(request):
     context['today_hot_data'] = today_hot_data(blog_content_type)
     context['yesterday_hot_data'] = yesterday_hot_data(blog_content_type)
     context['week_hot_blog'] = week_hot_blog()
-    return render_to_response('home.html', context)
+    return render(request, 'home.html', context)
+
+
+def login(request):
+    username = request.POST.get('username', '')
+    password = request.POST.get('password', '')
+    user = auth.authenticate(request, username=username, password=password)
+    referer = request.META.get('HTTP_REFERER', reverse('home'))
+    if user is not None:
+        auth.login(request, user)
+        return redirect(referer)
+    else:
+        return render(request, 'error.html', {'message': '用户名或密码不正确'})

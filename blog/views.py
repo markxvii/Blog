@@ -6,7 +6,7 @@ from django.db.models import Count
 from django.conf import settings
 from read_statistics.utils import read_statistics_once
 from comment.models import Comment
-
+from comment.forms import CommentForm
 
 
 def blog_list_commonData(request, blogs_all_list):
@@ -77,6 +77,7 @@ def blog_detail(request, blog_pk):
     context['next_blog'] = Blog.objects.filter(create_time__gt=blog.create_time).last()
     context['blog'] = blog
     context['comments'] = comments
+    context['comment_form'] = CommentForm(initial={'content_type': blog_content_type.model, 'object_id': blog_pk})
     response = render(request, 'blog/blog_detail.html', context)  # 响应
     response.set_cookie(read_cookie_key, 'true')  # 给浏览器发送已读cookie
     return response

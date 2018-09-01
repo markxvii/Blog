@@ -2,11 +2,12 @@ from django.shortcuts import render, redirect
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from .models import Comment
+from .forms import CommentForm
 
 
 # Create your views here.
 def update_comment(request):
-    referer = request.META.get('HTTP_REFERER', reverse('home'))
+    '''referer = request.META.get('HTTP_REFERER', reverse('home'))
     # 数据检查
     if not request.user.is_authenticated:
         return render(request, 'error.html', {'message': '请先登陆', 'redirect_to': referer})
@@ -28,4 +29,19 @@ def update_comment(request):
     comment.content_object = model_obj
     comment.save()
 
-    return redirect(referer)
+    return redirect(referer)'''
+    referer = request.META.get('HTTP_REFERER', reverse('home'))
+    if not request.user.is_authenticated:
+        return render(request, 'error.html', {'message': '请先登陆', 'redirect_to': referer})
+
+    comment_form = CommentForm(request.POST, user=request.user)
+    if comment_form.is_valid():
+        # 检查通过后将评论内容存入数据库
+        comment = Comment()
+        comment.user = request.user
+        comment.text = comment_form.cleaned_data['text']
+        comment.content_object = comment_form.cleaned_data['content_object']
+        comment.save()
+        return redirect(referer)
+    else:
+        return render(request, 'error.html', {'message': comment_form.errors, 'redirect_to': referer})

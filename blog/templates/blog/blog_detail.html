@@ -11,6 +11,8 @@
 {% load staticfiles %}
 {% block header_extends %}
     <link rel="stylesheet" href="{% static 'blog.css' %}">
+    <script type="text/javascript" src="{% static "ckeditor/ckeditor-init.js" %}"></script>
+    <script type="text/javascript" src="{% static "ckeditor/ckeditor/ckeditor.js" %}"></script>
 {% endblock %}
 {# 内容 #}
 {% block content %}
@@ -55,11 +57,15 @@
                 <div class="comment-area">
                     <h3 class="comment-area-title">提交评论</h3>
                     {% if user.is_authenticated %}
-                        <form action="{% url 'update_comment' %}" method="post" style="overflow: hidden">
+                        <form id="comment_form" action="{% url 'update_comment' %}" method="POST"
+                              style="overflow: hidden">
                             <label>{{ user.username }}，请填写你想评论的内容：</label>
                             {% csrf_token %}
-                            {{ comment_form }}
-                            <input type="submit" value="评论" class="btn btn-primary" style="float: right">
+                            {% for field in comment_form %}
+                                {{ field }}
+                            {% endfor %}
+                            <span id="comment_error" class="text-danger pull-left"></span>
+                            <input type="submit" value="评论" class="btn btn-primary pull-right">
                         </form>
                     {% else %}
                         未登录,请登陆后再评论！
@@ -71,18 +77,69 @@
                 </div>
                 <div class="comment-area">
                     <h3 class="comment-area-title">评论列表</h3>
-                    {% for comment in comments %}
-                        <div>
-                            {{ comment.user.username }}
-                            ({{ comment.comment_time|date:'Y-m-d H:i:s' }}):
-                            {{ comment.text }}
-                        </div>
-                    {% empty %}
-                        暂无
-                    {% endfor %}
+                    <div id="comment_list">
+                        {% for comment in comments %}
+                            <div class="comment">
+                                {{ comment.user.username }}
+                                ({{ comment.comment_time|date:'Y-m-d H:i:s' }}):
+                                {{ comment.text|safe }}
 
+                                {% for reply in comment.root_comment.all %}
+                                    <div class="reply">
+                                        {{ reply.user.username }}
+                                        ({{ reply.comment_time|date:'Y-m-d H:i:s' }}):
+                                        回复
+                                        {{ reply.reply_to.username }}
+                                        {{ reply.text }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% empty %}
+                            暂无
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+{% endblock %}
+{% block script_extends %}
+    <script type="text/javascript">
+        $("#comment_form").submit(function () {
+            // 判断是否为空
+            $("#comment_error").text('');
+            if (CKEDITOR.instances["id_text"].document.getBody().getText().trim() == '') {
+                $("#comment_error").text('评论内容不能为空哦');
+                return false;
+            }
+            // 更新数据到textarea
+            CKEDITOR.instances['id_text'].updateElement();
+            // 异步提交
+            $.ajax({
+                url: "{% url 'update_comment' %}",
+                type: 'POST',
+                data: $(this).serialize(),
+                cache: false,
+                success: function (data) {
+                    console.log(data);
+                    if (data['status'] == "SUCCESS") {
+                        // 插入数据
+                        var comment_html = '<div>' + data['username'] +
+                            ' (' + data['comment_time'] + ')：' +
+                            data['text'] + '</div>';
+                        $("#comment_list").prepend(comment_html);
+                        // 清空编辑框的内容
+                        CKEDITOR.instances['id_text'].setData('');
+                    } else {
+                        // 显示错误信息
+                        $("#comment_error").text(data['message']);
+                    }
+                },
+                error: function (xhr) {
+                    console.log(xhr);
+                }
+            });
+            return false;
+        });
+    </script>
 {% endblock %}

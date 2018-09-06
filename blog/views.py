@@ -4,6 +4,7 @@ from .models import Blog, BlogType
 from django.db.models import Count
 from django.conf import settings
 from read_statistics.utils import read_statistics_once
+from MSB.forms import LoginForm
 
 
 def blog_list_commonData(request, blogs_all_list):
@@ -70,6 +71,7 @@ def blog_detail(request, blog_pk):
     context['previous_blog'] = Blog.objects.filter(create_time__lt=blog.create_time).first()
     context['next_blog'] = Blog.objects.filter(create_time__gt=blog.create_time).last()
     context['blog'] = blog
+    context['login_form'] = LoginForm()
     response = render(request, 'blog/blog_detail.html', context)  # 响应
     response.set_cookie(read_cookie_key, 'true')  # 给浏览器发送已读cookie
     return response

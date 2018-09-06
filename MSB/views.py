@@ -10,6 +10,7 @@ from django.contrib import auth
 from django.contrib.auth.models import User
 from django.urls import reverse
 from .forms import LoginForm, RegForm
+from django.http import JsonResponse
 
 
 def week_hot_blog():
@@ -70,6 +71,17 @@ def login(request):
     context['login_form'] = login_form
     return render(request, 'login.html', context)
 
+
+def login_for_modal(request):
+    login_form = LoginForm(request.POST)
+    data = {}
+    if login_form.is_valid():
+        user = login_form.cleaned_data['user']
+        auth.login(request, user)
+        data['status'] = 'SUCCESS'
+    else:
+        data['status'] = 'ERROR'
+    return JsonResponse(data)
 
 def register(request):
     if request.method == 'POST':

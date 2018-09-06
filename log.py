@@ -1,0 +1,1 @@
+MSB = 'blog_detail'

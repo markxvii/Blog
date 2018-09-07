@@ -1,4 +1,4 @@
-'''for i in range(1,31):
+'''for i in range(templates,31):
     ...:     blog=Blog()
     ...:     blog.title='for %s' %i
     ...:     blog.content='xxxx%s'%i

@@ -5,19 +5,19 @@ from .models import ReadNum, ReadDetail
 from django.db.models import Sum
 
 
-# 如果获取不了浏览器存储的cookie则次数+1
+# 如果获取不了浏览器存储的cookie则次数+templates
 def read_statistics_once(request, obj):
     ct = ContentType.objects.get_for_model(obj)
     key = '%s_%s_read' % (ct.model, obj.pk)
 
     if not request.COOKIES.get(key):
-        # 总阅读数 + 1
+        # 总阅读数 + templates
         readnum, created = ReadNum.objects.get_or_create(content_type=ct, object_id=obj.pk)
         # 计数加一
         readnum.read_num += 1
         readnum.save()
 
-        # 当天阅读数 + 1
+        # 当天阅读数 + templates
         date = timezone.now().date()
         readDetail, created = ReadDetail.objects.get_or_create(content_type=ct, object_id=obj.pk, date=date)
         readDetail.read_num += 1
